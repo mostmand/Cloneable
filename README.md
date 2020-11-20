@@ -8,4 +8,4 @@ This source generator saves your time by generating the boilerplate code for clo
 
 You can add clone method to a class by making it partial and adding the attribute `Cloneable` on top of it. An example is provided in Cloneable.Sample project.
 
-Now it is only available in C# 9 which is in preview. So you should use VisualStudio preview with dotnet 5 preview installed.
+Source generators are introduced in dotnet 5.0. So make sure to have Visual Studio 16.8 or dotnet 5.0 sdk installed.
