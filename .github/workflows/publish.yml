@@ -10,15 +10,15 @@ jobs:
     steps:
       - uses: actions/checkout@v2
 
-      - name: Setup dotnet
-         uses: actions/setup-dotnet@v1
-         with:
-           dotnet-version: 5.0.100
+      - name: Setup .NET Core
+        uses: actions/setup-dotnet@v1
+        with:
+          dotnet-version: 5.0.100
 
       # Publish
       - name: publish on version change
         id: publish_nuget
-        uses: rohith/publish-nuget@v2
+        uses: brandedoutcast/publish-nuget@v2.5.5
         with:
           # Filepath of the project to be packaged, relative to root of repository
           PROJECT_FILE_PATH: Cloneable/Cloneable.csproj
