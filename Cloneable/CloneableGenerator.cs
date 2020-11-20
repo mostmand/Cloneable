@@ -52,7 +52,7 @@ namespace Cloneable
 
             var source = new StringBuilder($@"namespace {namespaceName}
 {{
-    public partial class {classSymbol.Name}
+    {classSymbol.DeclaredAccessibility.ToString().ToLowerInvariant()} partial class {classSymbol.Name}
     {{
         public {classSymbol.Name} Clone()
         {{

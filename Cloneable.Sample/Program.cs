@@ -2,8 +2,9 @@
 
 namespace Cloneable.Sample
 {
-    class Program
+    internal static class Program
     {
+        [STAThread]
         static void Main(string[] args)
         {
             var a = new Foo()
@@ -11,7 +12,7 @@ namespace Cloneable.Sample
                 A = "salam"
             };
             var b = a.Clone();
-            System.Console.WriteLine(b.A);
+            Console.WriteLine(b.A);
         }
     }
 }

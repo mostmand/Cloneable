@@ -1,6 +1,3 @@
-using System;
-using Cloneable;
-
 namespace Cloneable.Sample
 {
     [Cloneable]
