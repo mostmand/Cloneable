@@ -9,10 +9,11 @@ namespace Cloneable.Sample
         {
             var a = new Foo()
             {
-                A = "salam"
+                A = "salam",
+                B = 100
             };
             var b = a.Clone();
-            Console.WriteLine(b.A);
+            Console.WriteLine(b);
         }
     }
 }

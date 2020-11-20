@@ -61,7 +61,7 @@ namespace Cloneable
         {{
             return new {classSymbol.Name}
             {{
-                {fieldAssignmentsCode}
+{fieldAssignmentsCode}
             }};
         }}
     }}
