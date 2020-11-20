@@ -16,7 +16,7 @@ namespace Cloneable
 namespace Cloneable
 {
     [AttributeUsage(AttributeTargets.Class, Inherited = true, AllowMultiple = false)]
-    sealed class CloneableAttribute : Attribute
+    public sealed class CloneableAttribute : Attribute
     {
         public CloneableAttribute()
         {
