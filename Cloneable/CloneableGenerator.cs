@@ -34,9 +34,11 @@ namespace Cloneable
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
     public sealed class CloneAttribute : Attribute
     {
+        private bool preventDeepCopy;
         public CloneAttribute()
         {
         }
+        public bool PreventDeepCopy { get => preventDeepCopy; set => preventDeepCopy = value; }
     }
 }
 ";
@@ -156,7 +158,8 @@ namespace {namespaceName}
             var fieldAssignments = fieldNames.Select(x =>
                 {
                     bool isCloneable = x.Type != classSymbol && 
-                                       x.Type.GetAttributes().Any(a => a.AttributeClass == cloneableAttribute);
+                                       x.Type.GetAttributes().Any(a => a.AttributeClass == cloneableAttribute && 
+                                                                       !x.GetAttributes().Any(i => (bool?)i.NamedArguments.FirstOrDefault(e => e.Key.Equals("PreventDeepCopy")).Value.Value ?? false));
                     return (item: x, isCloneable);
                 }).
                 OrderBy(x => x.isCloneable).
