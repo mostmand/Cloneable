@@ -119,7 +119,7 @@ namespace {namespaceName}
     {GetAccessModifier(classSymbol)} partial class {classSymbol.Name}
     {{
         /// <summary>
-        /// Creates a copy of {classSymbol.Name} with NO circular reference checking. This method should be used if performance matters or on ""true"" struct types (struct types without object references).
+        /// Creates a copy of {classSymbol.Name} with NO circular reference checking. This method should be used if performance matters.
         /// 
         /// <exception cref=""StackOverflowException"">Will occur on any object that has circular references in the hierarchy.</exception>
         /// </summary>
