@@ -1,5 +1,6 @@
 ﻿using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
+using Microsoft.CodeAnalysis.CSharp.Syntax;
 using Microsoft.CodeAnalysis.Text;
 using System;
 using System.Collections.Generic;
@@ -11,55 +12,59 @@ namespace Cloneable
     [Generator]
     public class CloneableGenerator : ISourceGenerator
     {
+        private const string PreventDeepCopyKeyString = "PreventDeepCopy";
+        private const string ExplicitDeclarationKeyString = "ExplicitDeclaration";
+
+        private const string CloneableNamespace = "Cloneable";
+        private const string CloneableAttributeString = "CloneableAttribute";
+        private const string CloneAttributeString = "CloneAttribute";
+        private const string IgnoreCloneAttributeString = "IgnoreCloneAttribute";
+
         private const string cloneableAttributeText = @"using System;
 
-namespace Cloneable
+namespace " + CloneableNamespace + @"
 {
     [AttributeUsage(AttributeTargets.Class | AttributeTargets.Struct, Inherited = true, AllowMultiple = false)]
-    public sealed class CloneableAttribute : Attribute
+    public sealed class " + CloneableAttributeString + @" : Attribute
     {
-        private bool explicitDeclaration;
-        public CloneableAttribute()
+        public " + CloneableAttributeString + @"()
         {
         }
 
-        public bool ExplicitDeclaration { get => explicitDeclaration; set => explicitDeclaration = value; }
+        public bool " + ExplicitDeclarationKeyString + @" { get; set; }
     }
 }
 ";
+
         private const string clonePropertyAttributeText = @"using System;
 
-namespace Cloneable
+namespace " + CloneableNamespace + @"
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public sealed class CloneAttribute : Attribute
+    public sealed class " + CloneAttributeString + @" : Attribute
     {
-        private bool preventDeepCopy;
-        public CloneAttribute()
+        public " + CloneAttributeString + @"()
         {
         }
-        public bool PreventDeepCopy { get => preventDeepCopy; set => preventDeepCopy = value; }
+
+        public bool " + PreventDeepCopyKeyString + @" { get; set; }
     }
 }
 ";
+
         private const string ignoreClonePropertyAttributeText = @"using System;
 
-namespace Cloneable
+namespace " + CloneableNamespace + @"
 {
     [AttributeUsage(AttributeTargets.Property, Inherited = true, AllowMultiple = false)]
-    public sealed class IgnoreCloneAttribute : Attribute
+    public sealed class " + IgnoreCloneAttributeString + @" : Attribute
     {
-        public IgnoreCloneAttribute()
+        public " + IgnoreCloneAttributeString + @"()
         {
         }
     }
 }
 ";
-
-        private const string CloneableAttributeString = "CloneableAttribute";
-        private const string ClonePropertyAttributeString = "ClonePropertyAttribute";
-        private const string IgnoreClonePropertyAttributeString = "IgnoreClonePropertyAttribute";
-        private const string PreventDeepCopyKeyString = "PreventDeepCopy";
 
         private INamedTypeSymbol cloneableAttribute;
         private INamedTypeSymbol ignoreCloneAttribute;
@@ -81,29 +86,43 @@ namespace Cloneable
             if (context.SyntaxReceiver is not SyntaxReceiver receiver)
                 return;
 
+            Compilation compilation = GetCompilation(context);
+
+            InitAttributes(compilation);
+
+            var classSymbols = GetClassSymbols(compilation, receiver);
+            foreach (var classSymbol in classSymbols)
+            {
+                if (!classSymbol.TryGetAttribute(cloneableAttribute, out var attributes))
+                    continue;
+
+                var attribute = attributes.Single();
+                var isExplicit = (bool?)attribute.NamedArguments.FirstOrDefault(e => e.Key.Equals(ExplicitDeclarationKeyString)).Value.Value ?? false;
+                context.AddSource($"{classSymbol.Name}_cloneable.cs", SourceText.From(CreateCloneableCode(classSymbol, isExplicit), Encoding.UTF8));
+            }
+        }
+
+        private void InitAttributes(Compilation compilation)
+        {
+            cloneableAttribute = compilation.GetTypeByMetadataName($"{CloneableNamespace}.{CloneableAttributeString}")!;
+            cloneAttribute = compilation.GetTypeByMetadataName($"{CloneableNamespace}.{CloneAttributeString}")!;
+            ignoreCloneAttribute = compilation.GetTypeByMetadataName($"{CloneableNamespace}.{IgnoreCloneAttributeString}")!;
+        }
+
+        private static Compilation GetCompilation(GeneratorExecutionContext context)
+        {
             var options = (context.Compilation as CSharpCompilation).SyntaxTrees[0].Options as CSharpParseOptions;
-            
+
             var compilation = context.Compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(cloneableAttributeText, Encoding.UTF8), options)).
                 AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(clonePropertyAttributeText, Encoding.UTF8), options)).
                 AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(ignoreClonePropertyAttributeText, Encoding.UTF8), options));
-
-            cloneableAttribute = compilation.GetTypeByMetadataName("Cloneable.CloneableAttribute")!;
-            cloneAttribute = compilation.GetTypeByMetadataName("Cloneable.CloneAttribute")!;
-            ignoreCloneAttribute = compilation.GetTypeByMetadataName("Cloneable.IgnoreCloneAttribute")!;
-
-            var classSymbols = GetClassSymbols(compilation, cloneableAttribute, receiver);
-            foreach (var classSymbol in classSymbols)
-            {
-                var attribute = classSymbol.GetAttributes().First(x => SymbolEqualityComparer.Default.Equals(x.AttributeClass, cloneableAttribute));
-                var isExplicit = (bool?)attribute.NamedArguments.FirstOrDefault(e => e.Key.Equals("ExplicitDeclaration")).Value.Value ?? false;
-                context.AddSource($"{classSymbol.Name}_cloneable.cs", SourceText.From(CreateCloneableCode(classSymbol, isExplicit), Encoding.UTF8));
-            }
+            return compilation;
         }
 
         private string CreateCloneableCode(INamedTypeSymbol classSymbol, bool isExplicit)
         {
             string namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
-            var fieldAssignmentsCode = GenerateFieldAssignmentsCode(classSymbol, isExplicit, false);
+            var fieldAssignmentsCode = GenerateFieldAssignmentsCode(classSymbol, isExplicit);
             var fieldAssignmentsCodeSafe = fieldAssignmentsCode.Select(x =>
             {
                 if (x.isCloneable)
@@ -157,7 +176,7 @@ namespace {namespaceName}
 }}";
         }
 
-        private IEnumerable<(string line, bool isCloneable)> GenerateFieldAssignmentsCode(INamedTypeSymbol classSymbol, bool isExplicit, bool safe)
+        private IEnumerable<(string line, bool isCloneable)> GenerateFieldAssignmentsCode(INamedTypeSymbol classSymbol, bool isExplicit )
         {
             var fieldNames = GetCloneableProperties(classSymbol, isExplicit);
 
@@ -176,11 +195,21 @@ namespace {namespaceName}
 
             return $@"                {name} = this.{name}";
         }
-        
+
         private (IPropertySymbol item, bool isCloneable) IsFieldCloneable(IPropertySymbol x, INamedTypeSymbol classSymbol)
         {
-            bool isCloneable = !SymbolEqualityComparer.Default.Equals(x.Type, classSymbol) && x.Type.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, cloneableAttribute) && !x.GetAttributes().Any(i => (bool?) i.NamedArguments.FirstOrDefault(e => e.Key.Equals(PreventDeepCopyKeyString)).Value.Value ?? false));
-            return (item: x, isCloneable);
+            if (SymbolEqualityComparer.Default.Equals(x.Type, classSymbol))
+            {
+                return (x, false);
+            }
+
+            if (!x.Type.TryGetAttribute(cloneableAttribute, out var attributes))
+            {
+                return (x, false);
+            }
+
+            var preventDeepCopy = (bool?)attributes.Single().NamedArguments.FirstOrDefault(e => e.Key.Equals(PreventDeepCopyKeyString)).Value.Value ?? false;
+            return (item: x, !preventDeepCopy);
         }
 
         private string GetAccessModifier(INamedTypeSymbol classSymbol)
@@ -195,39 +224,20 @@ namespace {namespaceName}
                             x.CanBeReferencedByName);
             if (isExplicit)
             {
-                targetSymbolMembers = targetSymbolMembers.Where(x =>
-                    x.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, cloneAttribute)));
+                return targetSymbolMembers.Where(x => x.HasAttribute(cloneAttribute));
             }
             else
             {
-                targetSymbolMembers = targetSymbolMembers.Where(x =>
-                    !x.GetAttributes().Any(a => SymbolEqualityComparer.Default.Equals(a.AttributeClass, ignoreCloneAttribute)));
+                return targetSymbolMembers.Where(x => !x.HasAttribute(ignoreCloneAttribute));
             }
-
-            return targetSymbolMembers;
         }
 
-        private static List<INamedTypeSymbol> GetClassSymbols(Compilation compilation, INamedTypeSymbol cloneableAttributeSymbol, SyntaxReceiver receiver)
+        private static IEnumerable<INamedTypeSymbol> GetClassSymbols(Compilation compilation, SyntaxReceiver receiver)
         {
-            var classSymbols = new List<INamedTypeSymbol>();
-            foreach (var clazz in receiver.CandidateClasses)
-            {
-                INamedTypeSymbol classSymbol = GetClassSymbol(compilation, clazz);
-                if (HasAttribute(classSymbol, cloneableAttributeSymbol))
-                {
-                    classSymbols.Add(classSymbol);
-                }
-            }
-
-            return classSymbols;
+            return receiver.CandidateClasses.Select(clazz => GetClassSymbol(compilation, clazz));
         }
 
-        private static bool HasAttribute(INamedTypeSymbol classSymbol, INamedTypeSymbol attributeSymbol)
-        {
-            return classSymbol.GetAttributes().Any(ad => SymbolEqualityComparer.Default.Equals(ad.AttributeClass, attributeSymbol));
-        }
-
-        private static INamedTypeSymbol GetClassSymbol(Compilation compilation, Microsoft.CodeAnalysis.CSharp.Syntax.ClassDeclarationSyntax clazz)
+        private static INamedTypeSymbol GetClassSymbol(Compilation compilation, ClassDeclarationSyntax clazz)
         {
             var model = compilation.GetSemanticModel(clazz.SyntaxTree);
             var classSymbol = model.GetDeclaredSymbol(clazz)!;
@@ -237,8 +247,8 @@ namespace {namespaceName}
         private static void InjectCloneableAttributes(GeneratorExecutionContext context)
         {
             context.AddSource(CloneableAttributeString, SourceText.From(cloneableAttributeText, Encoding.UTF8));
-            context.AddSource(ClonePropertyAttributeString, SourceText.From(clonePropertyAttributeText, Encoding.UTF8));
-            context.AddSource(IgnoreClonePropertyAttributeString, SourceText.From(ignoreClonePropertyAttributeText, Encoding.UTF8));
+            context.AddSource(CloneAttributeString, SourceText.From(clonePropertyAttributeText, Encoding.UTF8));
+            context.AddSource(IgnoreCloneAttributeString, SourceText.From(ignoreClonePropertyAttributeText, Encoding.UTF8));
         }
     }
 }

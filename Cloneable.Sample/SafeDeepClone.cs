@@ -16,6 +16,7 @@ namespace Cloneable.Sample
                 $"\tChild.A:\t{Child?.A}";
         }
     }
+
     [Cloneable]
     public partial class SafeDeepCloneChild
     {
