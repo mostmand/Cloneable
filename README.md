@@ -21,7 +21,7 @@ You can add clone method to a class by making it partial and adding the attribut
 
 Source generators are introduced in dotnet 5.0. So make sure to have Visual Studio 16.8 or dotnet 5.0 sdk installed.
 
-Here is an example:
+Here is a simple example:
 
 ```csharp
 [Cloneable]
@@ -31,3 +31,5 @@ public partial class Foo
     public int B { get; set; }
 }
 ```
+
+For more examples please visit the [sample project](https://github.com/mostmand/Cloneable/tree/master/Cloneable.Sample).
