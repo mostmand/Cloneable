@@ -66,9 +66,9 @@ namespace " + CloneableNamespace + @"
 }
 ";
 
-        private INamedTypeSymbol cloneableAttribute;
-        private INamedTypeSymbol ignoreCloneAttribute;
-        private INamedTypeSymbol cloneAttribute;
+        private INamedTypeSymbol? cloneableAttribute;
+        private INamedTypeSymbol? ignoreCloneAttribute;
+        private INamedTypeSymbol? cloneAttribute;
 
         public void Initialize(GeneratorInitializationContext context)
         {
@@ -93,7 +93,7 @@ namespace " + CloneableNamespace + @"
             var classSymbols = GetClassSymbols(compilation, receiver);
             foreach (var classSymbol in classSymbols)
             {
-                if (!classSymbol.TryGetAttribute(cloneableAttribute, out var attributes))
+                if (!classSymbol.TryGetAttribute(cloneableAttribute!, out var attributes))
                     continue;
 
                 var attribute = attributes.Single();
@@ -111,7 +111,7 @@ namespace " + CloneableNamespace + @"
 
         private static Compilation GetCompilation(GeneratorExecutionContext context)
         {
-            var options = (context.Compilation as CSharpCompilation).SyntaxTrees[0].Options as CSharpParseOptions;
+            var options = context.Compilation.SyntaxTrees.First().Options as CSharpParseOptions;
 
             var compilation = context.Compilation.AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(cloneableAttributeText, Encoding.UTF8), options)).
                 AddSyntaxTrees(CSharpSyntaxTree.ParseText(SourceText.From(clonePropertyAttributeText, Encoding.UTF8), options)).
@@ -203,7 +203,7 @@ namespace {namespaceName}
                 return (x, false);
             }
 
-            if (!x.Type.TryGetAttribute(cloneableAttribute, out var attributes))
+            if (!x.Type.TryGetAttribute(cloneableAttribute!, out var attributes))
             {
                 return (x, false);
             }
@@ -224,11 +224,11 @@ namespace {namespaceName}
                             x.CanBeReferencedByName);
             if (isExplicit)
             {
-                return targetSymbolMembers.Where(x => x.HasAttribute(cloneAttribute));
+                return targetSymbolMembers.Where(x => x.HasAttribute(cloneAttribute!));
             }
             else
             {
-                return targetSymbolMembers.Where(x => !x.HasAttribute(ignoreCloneAttribute));
+                return targetSymbolMembers.Where(x => !x.HasAttribute(ignoreCloneAttribute!));
             }
         }
 
