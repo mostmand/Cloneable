@@ -1,6 +1,6 @@
-using System.Collections.Generic;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
+using System.Collections.Generic;
 /// <summary>
 /// Created on demand before each generation pass
 /// </summary>
@@ -15,7 +15,7 @@ namespace Cloneable
         /// </summary>
         public void OnVisitSyntaxNode(SyntaxNode syntaxNode)
         {
-            // any field with at least one attribute is a candidate for property generation
+            // any field with at least one attribute is a candidate for being cloneable
             if (syntaxNode is ClassDeclarationSyntax classDeclarationSyntax &&
                 classDeclarationSyntax.AttributeLists.Count > 0)
             {
