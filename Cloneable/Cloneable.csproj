@@ -5,6 +5,7 @@
 		<LangVersion>latest</LangVersion>
 		<Nullable>enable</Nullable>
 		<IncludeBuildOutput>false</IncludeBuildOutput>
+		<RepositoryUrl>https://github.com/mostmand/Cloneable</RepositoryUrl>
 	</PropertyGroup>
 
 	<ItemGroup>
