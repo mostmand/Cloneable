@@ -222,6 +222,16 @@ namespace {namespaceName}
             var targetSymbolMembers = classSymbol.GetMembers().OfType<IPropertySymbol>()
                 .Where(x => x.SetMethod is not null &&
                             x.CanBeReferencedByName);
+
+            var baseTargetSymbolMembers = classSymbol.BaseType?.GetMembers().OfType<IPropertySymbol>()
+                .Where(x => x.SetMethod is not null &&
+                            x.CanBeReferencedByName);
+
+            if (baseTargetSymbolMembers != null)
+            {
+                targetSymbolMembers.Concat(baseTargetSymbolMembers);
+            }
+
             if (isExplicit)
             {
                 return targetSymbolMembers.Where(x => x.HasAttribute(cloneAttribute!));
