@@ -11,6 +11,7 @@ namespace Cloneable.Sample
             DoSimpleExplicitClone();
             DoDeepClone();
             DoSafeDeepClone();
+            DoBaseClassClone();
         }
 
         static void DoSimpleClone()
@@ -78,6 +79,18 @@ namespace Cloneable.Sample
             Console.WriteLine("Clone equals original: " + (clone == parent));
             Console.WriteLine("Is parents child copied: " + (clone.Child != parent.Child));
             Console.WriteLine();
+        }
+
+        static void DoBaseClassClone()
+        {
+            var classWithInheritance = new ClassWithInheritance();
+
+            classWithInheritance.A = 2;
+
+            var clone = classWithInheritance.Clone();
+
+            Console.WriteLine(clone);
+            Console.WriteLine($"Clone A of Inherited Class:{clone.A}");
         }
     }
 }
