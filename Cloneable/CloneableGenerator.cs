@@ -229,7 +229,7 @@ namespace {namespaceName}
 
             if (baseTargetSymbolMembers != null)
             {
-                targetSymbolMembers.Concat(baseTargetSymbolMembers);
+                targetSymbolMembers = targetSymbolMembers.Concat(baseTargetSymbolMembers);
             }
 
             if (isExplicit)
