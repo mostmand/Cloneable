@@ -5,10 +5,10 @@ namespace Cloneable.Sample
     [Cloneable(ExplicitDeclaration = true)]
     public partial class SimpleCloneExplicit
     {
-        public string A { get; set; }
+        public string A { get; init; }
      
         [Clone]
-        public int B { get; set; }
+        public int B { get; init; }
 
         public override string ToString()
         {

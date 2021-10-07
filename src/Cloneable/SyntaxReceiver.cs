@@ -1,11 +1,12 @@
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp.Syntax;
 using System.Collections.Generic;
-/// <summary>
-/// Created on demand before each generation pass
-/// </summary>
+
 namespace Cloneable
 {
+    /// <summary>
+    /// Created on demand before each generation pass
+    /// </summary>
     internal class SyntaxReceiver : ISyntaxReceiver
     {
         public IList<ClassDeclarationSyntax> CandidateClasses { get; } = new List<ClassDeclarationSyntax>();

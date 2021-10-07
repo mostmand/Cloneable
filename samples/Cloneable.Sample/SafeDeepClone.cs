@@ -5,8 +5,8 @@ namespace Cloneable.Sample
     [Cloneable]
     public partial class SafeDeepClone
     {
-        public string A { get; set; }
-        public SafeDeepCloneChild Child { get; set; }
+        public string A { get; init; }
+        public SafeDeepCloneChild Child { get; init; }
 
         public override string ToString()
         {
@@ -20,7 +20,7 @@ namespace Cloneable.Sample
     [Cloneable]
     public partial class SafeDeepCloneChild
     {
-        public string A { get; set; }
+        public string A { get; init; }
         public SafeDeepClone Parent { get; set; }
 
         public override string ToString()

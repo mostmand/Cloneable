@@ -5,7 +5,7 @@ namespace Cloneable.Sample
     internal static class Program
     {
         [STAThread]
-        static void Main(string[] args)
+        private static void Main()
         {
             DoSimpleClone();
             DoSimpleExplicitClone();
@@ -13,7 +13,7 @@ namespace Cloneable.Sample
             DoSafeDeepClone();
         }
 
-        static void DoSimpleClone()
+        private static void DoSimpleClone()
         {
             // Uses the Clone method on a class with no circular references
             var obj = new SimpleClone()
@@ -27,7 +27,7 @@ namespace Cloneable.Sample
             Console.WriteLine();
         }
 
-        static void DoSimpleExplicitClone()
+        private static void DoSimpleExplicitClone()
         {
             // Uses the Clone method on a class with no circular references
             var obj = new SimpleCloneExplicit()
@@ -41,7 +41,7 @@ namespace Cloneable.Sample
             Console.WriteLine();
         }
 
-        static void DoDeepClone()
+        private static void DoDeepClone()
         {
             // Uses the Clone method on a class with no circular references
             var obj = new SimpleClone()
@@ -60,7 +60,7 @@ namespace Cloneable.Sample
             Console.WriteLine();
         }
 
-        static void DoSafeDeepClone()
+        private static void DoSafeDeepClone()
         {
             // Uses the Clone method on a class with no circular references
             var child = new SafeDeepCloneChild()
