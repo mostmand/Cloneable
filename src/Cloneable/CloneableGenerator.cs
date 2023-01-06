@@ -86,7 +86,7 @@ namespace " + CloneableNamespace + @"
         if (context.SyntaxReceiver is not SyntaxReceiver receiver)
             return;
 
-        Compilation compilation = GetCompilation(context);
+        var compilation = GetCompilation(context);
 
         InitAttributes(compilation);
 
@@ -121,8 +121,8 @@ namespace " + CloneableNamespace + @"
 
     private string CreateCloneableCode(INamedTypeSymbol classSymbol, bool isExplicit)
     {
-        string namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
-        var fieldAssignmentsCode = GenerateFieldAssignmentsCode(classSymbol, isExplicit);
+        var namespaceName = classSymbol.ContainingNamespace.ToDisplayString();
+        var fieldAssignmentsCode = GenerateFieldAssignmentsCode(classSymbol, isExplicit).ToList();
         var fieldAssignmentsCodeSafe = fieldAssignmentsCode.Select(x =>
         {
             if (x.isCloneable)
