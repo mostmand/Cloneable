@@ -31,7 +31,7 @@ public class CloneableGenerator : ISourceGenerator
     {
         // System.Diagnostics.Debugger.Launch();
         var attributes = AttributeFinder.FindAttributes();
-        InjectAttributes(context, attributes);
+        InjectAttributesCode(context, attributes);
         GenerateCloneMethods(context, attributes);
     }
 
@@ -40,20 +40,50 @@ public class CloneableGenerator : ISourceGenerator
         if (context.SyntaxReceiver is not SyntaxReceiver receiver)
             return;
 
-        var compilation = GetCompilation(context, attributeInfos);
+        var compilation = AddAttributesSyntaxTrees(context, attributeInfos);
 
         InitAttributes(compilation);
 
+        var cloneableCodes = GenerateCloneableCodes(compilation, receiver);
+
+        AddGeneratedSourcesToContext(context, cloneableCodes);
+    }
+
+    private static void AddGeneratedSourcesToContext(GeneratorExecutionContext context, List<GeneratedCode> cloneableCodes)
+    {
+        foreach (var cloneableCode in cloneableCodes)
+        {
+            context.AddSource(cloneableCode.FileName, SourceText.From(cloneableCode.Code, Encoding.UTF8));
+        }
+    }
+
+    private List<GeneratedCode> GenerateCloneableCodes(Compilation compilation, SyntaxReceiver receiver)
+    {
         var classSymbols = GetClassSymbols(compilation, receiver);
+        var cloneableCodes = new List<GeneratedCode>();
         foreach (var classSymbol in classSymbols)
         {
             if (!classSymbol.TryGetAttribute(_cloneableAttribute!, out var attributes))
                 continue;
 
             var attribute = attributes.Single();
-            var isExplicit = (bool?)attribute.NamedArguments.FirstOrDefault(e => e.Key.Equals(CloneableAttributeConstants.ExplicitDeclarationKeyString)).Value.Value ?? false;
-            context.AddSource($"{classSymbol.Name}_cloneable.cs", SourceText.From(CreateCloneableCode(classSymbol, isExplicit), Encoding.UTF8));
+            var isExplicit = IsExplicit(attribute);
+
+            var fileName = $"{classSymbol.Name}_cloneable.cs";
+            var code = CreateCloneableCode(classSymbol, isExplicit);
+            var cloneableCode = new GeneratedCode(fileName, code);
+            cloneableCodes.Add(cloneableCode);
         }
+
+        return cloneableCodes;
+    }
+
+    private static bool IsExplicit(AttributeData attribute)
+    {
+        return (bool?)attribute.NamedArguments
+            .FirstOrDefault(e => e.Key.Equals(CloneableAttributeConstants.ExplicitDeclarationKeyString))
+            .Value
+            .Value ?? false;
     }
 
     private void InitAttributes(Compilation compilation)
@@ -63,7 +93,7 @@ public class CloneableGenerator : ISourceGenerator
         _ignoreCloneAttribute = compilation.GetTypeByMetadataName($"{CloneableConstants.RootNamespace}.{IgnoreCloneAttributeConstants.IgnoreCloneAttributeString}")!;
     }
 
-    private static Compilation GetCompilation(GeneratorExecutionContext context, IEnumerable<AttributeInfo> attributes)
+    private static Compilation AddAttributesSyntaxTrees(GeneratorExecutionContext context, IEnumerable<AttributeInfo> attributes)
     {
         var options = context.Compilation.SyntaxTrees.First().Options as CSharpParseOptions;
 
@@ -138,7 +168,9 @@ namespace {namespaceName}
     {
         var fieldNames = GetCloneableProperties(classSymbol, isExplicit);
 
-        var fieldAssignments = fieldNames.Select(field => IsFieldCloneable(field, classSymbol)).OrderBy(x => x.isCloneable).Select(x => (GenerateAssignmentCode(x.item.Name, x.isCloneable), x.isCloneable));
+        var fieldAssignments = fieldNames.Select(field => IsFieldCloneable(field, classSymbol))
+            .OrderBy(x => x.isCloneable)
+            .Select(x => (GenerateAssignmentCode(x.item.Name, x.isCloneable), x.isCloneable));
         return fieldAssignments;
     }
 
@@ -200,7 +232,7 @@ namespace {namespaceName}
         return classSymbol;
     }
 
-    private static void InjectAttributes(GeneratorExecutionContext context, IEnumerable<AttributeInfo> attributes)
+    private static void InjectAttributesCode(GeneratorExecutionContext context, IEnumerable<AttributeInfo> attributes)
     {
         foreach (var attribute in attributes)
         {
